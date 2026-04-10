@@ -1,0 +1,30 @@
+# node modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# env files (IMPORTANT)
+.env
+client/.env
+server/.env
+
+# build folders
+dist/
+build/
+client/build/
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# misc
+coverage/
