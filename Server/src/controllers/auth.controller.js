@@ -2,7 +2,7 @@ import userModel from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import generateToken from "../utils/generateToken.js";
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { fullName, email, password, role, mobile } = req.body;
 
@@ -51,3 +51,43 @@ const register = async (req, res) => {
   }
 };
 
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+        success: false,
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      res.status(400).json({
+        message: "Invalid email or password",
+        success: false,
+      });
+    }
+
+    const token = generateToken(user._id);
+    res.cookie("token", token, {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+    });
+
+    res.status(201).json({
+      message: "user Login successfully",
+      success: true,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
