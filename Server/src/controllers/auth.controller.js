@@ -1,6 +1,7 @@
 import userModel from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import generateToken from "../utils/generateToken.js";
+import { sendOtpEmail } from "../utils/mail.js";
 
 export const register = async (req, res) => {
   try {
@@ -89,5 +90,37 @@ export const login = async (req, res) => {
     res.status(500).json({
       message: error.message,
     });
+  }
+};
+
+export const logout = (req, res) => {
+  try {
+    res.clearCookie("token");
+    return res.status(201).json({ message: "log out successfully" });
+  } catch (error) {
+    return res.status(500).json(`sign out error ${error} `);
+  }
+};
+
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User dose not exist" });
+    }
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    user.resetOtp = otp;
+    user.otpExpires = Date.now() + 5 * 60 * 1000;
+    user.isOtpVerified = false;
+    await user.save();
+    await sendOtpEmail(email, otp);
+    return res.status(201).json({ message: "otp sent successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
