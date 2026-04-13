@@ -20,9 +20,9 @@ const userSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "chef", "deliveryBoy"],
+      enum: ["user", "owner", "deliveryBoy"],
     },
-    restOtp: {
+    resetOtp: {
       type: String,
     },
     isOtpVerified: {
