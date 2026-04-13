@@ -1,13 +1,53 @@
 import React, { useState } from "react";
 import AuthLayout from "../../components/ui/AuthLayout";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { serverUrl } from "../../routes/app.route";
+import axios from "axios";
 
 const ForgetPassword = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [email, setemail] = useState("");
   const [otp, setotp] = useState("");
   const [newPassword, setnewPassword] = useState("");
 
+  const handleSendOtp = async () => {
+    try {
+      const result = await axios.post(
+        `${serverUrl}/api/auth/send-otp`,
+        { email },
+        { withCredentials: true },
+      );
+      console.log(result);
+      setStep(2);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleverifyOtp = async () => {
+    try {
+      const result = await axios.post(
+        `${serverUrl}/api/auth/verify-otp`,
+        { email, otp },
+        { withCredentials: true },
+      );
+      console.log(result);
+      setStep(3);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handelResetPassword = async () => {
+    try {
+      const result = await axios.post(
+        `${serverUrl}/api/auth/reset-password`,
+        { email, newPassword },
+        { withCredentials: true },
+      );
+      console.log(result);
+      navigate("/login");
+    } catch (error) {}
+  };
   return (
     <AuthLayout>
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 transition-all duration-300 hover:shadow-xl">
@@ -50,7 +90,7 @@ const ForgetPassword = () => {
             </div>
 
             <button
-              onClick={() => setStep(2)}
+              onClick={handleSendOtp}
               className="w-full mt-5 bg-[#FFD700] py-2.5 rounded-lg text-sm font-semibold
               transition-all duration-200
               hover:bg-yellow-400
@@ -82,7 +122,7 @@ const ForgetPassword = () => {
             </div>
 
             <button
-              onClick={() => setStep(3)}
+              onClick={handleverifyOtp}
               className="w-full mt-5 bg-[#FFD700] py-2.5 rounded-lg text-sm font-semibold
               hover:bg-yellow-400 active:scale-95"
             >
@@ -111,6 +151,7 @@ const ForgetPassword = () => {
             </div>
 
             <button
+              onClick={handelResetPassword}
               className="w-full mt-5 bg-[#FFD700] py-2.5 rounded-lg text-sm font-semibold
               hover:bg-yellow-400 active:scale-95"
             >
