@@ -1,5 +1,6 @@
 import userModel from "../models/user.model.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import generateToken from "../utils/generateToken.js";
 import { sendOtpEmail } from "../utils/mail.js";
 
@@ -102,24 +103,107 @@ export const logout = (req, res) => {
   }
 };
 
+
 export const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
+
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
     }
 
     const user = await userModel.findOne({ email });
+
     if (!user) {
-      return res.status(400).json({ message: "User dose not exist" });
+      return res.status(400).json({ message: "User does not exist" });
     }
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const otp = crypto.randomInt(1000, 9999).toString();
+
     user.resetOtp = otp;
     user.otpExpires = Date.now() + 5 * 60 * 1000;
     user.isOtpVerified = false;
+
     await user.save();
+
     await sendOtpEmail(email, otp);
-    return res.status(201).json({ message: "otp sent successfully" });
+
+    return res.status(200).json({ message: "OTP sent successfully" });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP required" });
+    }
+
+    const user = await userModel.findOne({ email });
+
+    if (
+      !user ||
+      user.resetOtp !== otp ||
+      user.otpExpires < Date.now()
+    ) {
+      return res.status(400).json({ message: "Invalid/Expired OTP" });
+    }
+
+    user.isOtpVerified = true;
+    user.resetOtp = undefined;
+    user.otpExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({ message: "OTP verified successfully" });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // validation
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: "Email & password required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password too weak" });
+    }
+
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (!user.isOtpVerified) {
+      return res.status(400).json({ message: "OTP verification required" });
+    }
+
+    // hash password
+    const hashPassword = await bcrypt.hash(newPassword, 10);
+
+    // update user
+    user.password = hashPassword;
+    user.isOtpVerified = false;
+    user.resetOtp = undefined;
+    user.otpExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({ message: "Password reset successfully" });
+
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
