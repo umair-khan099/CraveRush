@@ -1,9 +1,8 @@
 import nodemailer from "nodemailer";
 import config from "../config/dotenv.config.js";
+
 const transporter = nodemailer.createTransport({
-  host: "Gmail",
-  port: 465,
-  secure: true, // use STARTTLS (upgrade connection to TLS after connecting)
+  service: "gmail", // Use 'service' instead of 'host' for Gmail
   auth: {
     user: config.EMAIL,
     pass: config.APP_PASS,
@@ -11,9 +10,17 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendOtpEmail = async (to, otp) => {
-  await transporter.sendEmail({
-    to,
-    subject: "Reset Your Password",
-    html: `<p> Your OTP for reset password is <b> ${otp} </b> expires in 2 minut`,
-  });
+  try {
+    // Changed from sendEmail to sendMail
+    await transporter.sendMail({
+      from: config.EMAIL, // Added the 'from' address
+      to,
+      subject: "Reset Your Password",
+      html: `<p> Your OTP for reset password is <b> ${otp} </b> expires in 2 minutes.</p>`,
+    });
+    console.log("OTP email sent successfully!");
+  } catch (error) {
+    console.error("Error sending OTP email: ", error);
+    throw error;
+  }
 };
